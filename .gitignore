@@ -50,3 +50,7 @@ Thumbs.db
 
 # Claude Code (configuración local del desarrollador)
 .claude/settings.local.json
+
+# Plataformas generadas localmente por scripts/windows/preparar-app.ps1 (flutter create)
+apps/mobile/android/
+apps/mobile/ios/

@@ -13,7 +13,7 @@ class PantallaIngreso extends StatefulWidget {
       required this.api,
       required this.alEnrolar});
 
-  final ServicioAutenticacion auth;
+  final Autenticacion auth;
   final ApiCliente api;
   final VoidCallback alEnrolar;
 

@@ -12,7 +12,8 @@
     "declaration": false,
     "sourceMap": true,
     "outDir": "dist",
-    "types": ["node", "multer"]
+    "types": ["node", "multer"],
+    "allowImportingTsExtensions": true
   },
   "include": ["src", "test", "scripts"]
 }

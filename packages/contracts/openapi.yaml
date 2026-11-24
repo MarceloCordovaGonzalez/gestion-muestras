@@ -153,6 +153,14 @@ paths:
       responses:
         '200': { description: OK }
         '404': { description: Funcionalidad no habilitada }
+  /planificacion/generar:
+    post:
+      tags: [consultas]
+      summary: Genera (idempotente) los retiros planificados de una fecha (RN-08, RN-14)
+      parameters:
+        - $ref: '#/components/parameters/Fecha'
+      responses:
+        '201': { description: 'Cantidad de retiros planificados generados' }
   /avisos:
     get:
       tags: [consultas]

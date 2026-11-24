@@ -13,7 +13,7 @@ export default defineConfig({
         manualChunks: {
           graficos: ['echarts', 'echarts-for-react'],
           firebase: ['firebase/app', 'firebase/auth'],
-          mapas: ['@vis.gl/react-google-maps'],
+          mapas: ['@vis.gl/react-google-maps', 'leaflet', 'react-leaflet'],
         },
       },
     },

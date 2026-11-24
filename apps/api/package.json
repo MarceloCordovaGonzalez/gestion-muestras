@@ -6,14 +6,17 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "dev": "node --watch --import @swc-node/register/esm-register src/main.ts",
+    "dev": "tsc -p tsconfig.build.json && node --env-file-if-exists=.env --enable-source-maps dist/main.js",
     "start": "node dist/main.js",
     "job:planificacion": "node dist/jobs/planificacion-diaria.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src test",
     "test": "node --import @swc-node/register/esm-register --test \"test/**/*.test.ts\"",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+    "prisma:migrate": "prisma migrate deploy",
+    "demo:planilla": "node scripts/demo/generar-planilla.ts",
+    "demo:importar": "node scripts/demo/importar-planilla.ts",
+    "demo:simular": "node scripts/demo/simular-jornada.ts"
   },
   "dependencies": {
     "@gm/domain": "workspace:*",

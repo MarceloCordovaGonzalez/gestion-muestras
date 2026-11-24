@@ -1,4 +1,5 @@
-# Entorno local de desarrollo: PostgreSQL 16 + PostGIS 3 (equivalente a Cloud SQL).
+# Entorno local de desarrollo (SOLO DESARROLLO; credenciales de ejemplo, no reutilizar).
+#   docker compose up -d          → PostgreSQL 16 + PostGIS 3 (puerto 5432) y pgAdmin (http://localhost:5050)
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -15,7 +16,25 @@ services:
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U gm -d gestion_muestras']
       interval: 5s
-      retries: 10
+      retries: 20
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: gm-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gm.local
+      PGADMIN_DEFAULT_PASSWORD: gm_local_only
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - ./db/dev/pgadmin-servidores.json:/pgadmin4/servers.json:ro
+      - gm-pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   gm-db-data:
+  gm-pgadmin-data:

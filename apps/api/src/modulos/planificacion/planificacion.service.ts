@@ -1,5 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { diaSemana } from '@gm/domain';
+import { BadRequestException, Controller, Injectable, Logger, Post, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { diaSemana, fechaLocal } from '@gm/domain';
+import { Roles, UsuarioActual } from '../../comun/auth/roles.js';
+import type { UsuarioAutenticado } from '../../comun/contexto.js';
 import { PrismaService, type Tx } from '../../comun/prisma.service.js';
 
 const COLUMNA_DIA = {
@@ -60,5 +63,25 @@ export class PlanificacionService {
       WHERE p.codemp = ${codemp} AND p.fecpla = ${fecha}::date
         AND (${comuna ?? null}::text IS NULL OR c.comcen = ${comuna ?? null})`;
     return r?.n ?? 0;
+  }
+}
+
+/**
+ * POST /v1/planificacion/generar?fecha=YYYY-MM-DD – regenera (idempotente) los retiros planificados
+ * de una fecha. Útil tras importar o corregir rutas, y en la simulación de desarrollo.
+ */
+@ApiTags('planificacion')
+@ApiBearerAuth()
+@Controller('planificacion')
+export class PlanificacionController {
+  constructor(private readonly servicio: PlanificacionService) {}
+
+  @Post('generar')
+  @Roles('ADMINISTRADOR')
+  async generar(@UsuarioActual() u: UsuarioAutenticado, @Query('fecha') fecha?: string) {
+    const f = fecha ?? fechaLocal(new Date());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f))
+      throw new BadRequestException('fecha debe tener formato YYYY-MM-DD');
+    return { fecha: f, generados: await this.servicio.generarDia(u.codemp, f) };
   }
 }
