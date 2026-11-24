@@ -152,6 +152,7 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test --coverage
+        if: always()
       - name: Formato (muestra la diferencia si no cumple)
         if: always()
         run: |

@@ -1,3 +1,5 @@
+// TODO(MVP1): migrar a package:material_ui (Flutter 3.47+ depreca material.dart).
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import '../datos/api_cliente.dart';
@@ -5,7 +7,11 @@ import '../servicios/autenticacion.dart';
 
 /// CU-01: ingreso con número de celular y código OTP.
 class PantallaIngreso extends StatefulWidget {
-  const PantallaIngreso({super.key, required this.auth, required this.api, required this.alEnrolar});
+  const PantallaIngreso(
+      {super.key,
+      required this.auth,
+      required this.api,
+      required this.alEnrolar});
 
   final ServicioAutenticacion auth;
   final ApiCliente api;
@@ -34,7 +40,9 @@ class _PantallaIngresoState extends State<PantallaIngreso> {
       await widget.auth.cerrarSesion();
       _codigoEnviado = false;
     } catch (_) {
-      _error = _codigoEnviado ? 'Código incorrecto o vencido.' : 'No fue posible enviar el código.';
+      _error = _codigoEnviado
+          ? 'Código incorrecto o vencido.'
+          : 'No fue posible enviar el código.';
     } finally {
       if (mounted) setState(() => _ocupado = false);
     }
@@ -53,24 +61,29 @@ class _PantallaIngresoState extends State<PantallaIngreso> {
               controller: _celular,
               enabled: !_codigoEnviado,
               keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Número de celular (+569XXXXXXXX)'),
+              decoration: const InputDecoration(
+                  labelText: 'Número de celular (+569XXXXXXXX)'),
             ),
             if (_codigoEnviado)
               TextField(
                 controller: _codigo,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                decoration: const InputDecoration(labelText: 'Código recibido por SMS'),
+                decoration:
+                    const InputDecoration(labelText: 'Código recibido por SMS'),
               ),
             const SizedBox(height: 16),
-            if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            if (_error != null)
+              Text(_error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _ocupado
                   ? null
                   : () => _ejecutar(() async {
                         if (!_codigoEnviado) {
-                          await widget.auth.solicitarCodigo(_celular.text.replaceAll(' ', ''));
+                          await widget.auth.solicitarCodigo(
+                              _celular.text.replaceAll(' ', ''));
                           setState(() => _codigoEnviado = true);
                           if (!widget.auth.haySesion) return;
                         } else {
@@ -81,7 +94,8 @@ class _PantallaIngresoState extends State<PantallaIngreso> {
                       }),
               child: Padding(
                 padding: const EdgeInsets.all(12),
-                child: Text(_codigoEnviado ? 'Validar código' : 'Enviar código'),
+                child:
+                    Text(_codigoEnviado ? 'Validar código' : 'Enviar código'),
               ),
             ),
           ],

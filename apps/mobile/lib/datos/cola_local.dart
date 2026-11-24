@@ -51,16 +51,20 @@ class ColaSqlCipher implements ColaLocal {
 
   @override
   Future<void> encolar(MarcacionPendiente m) async {
-    await _db.insert('cola', m.aFila(), conflictAlgorithm: ConflictAlgorithm.ignore);
+    await _db.insert('cola', m.aFila(),
+        conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   @override
   Future<List<MarcacionPendiente>> pendientes() async =>
-      (await _db.query('cola', orderBy: 'datevia')).map(MarcacionPendiente.desdeFila).toList();
+      (await _db.query('cola', orderBy: 'datevia'))
+          .map(MarcacionPendiente.desdeFila)
+          .toList();
 
   @override
   Future<void> actualizar(MarcacionPendiente m) async {
-    await _db.update('cola', m.aFila(), where: 'idvia = ?', whereArgs: [m.idvia]);
+    await _db
+        .update('cola', m.aFila(), where: 'idvia = ?', whereArgs: [m.idvia]);
   }
 
   @override
@@ -70,7 +74,8 @@ class ColaSqlCipher implements ColaLocal {
 
   @override
   Future<int> cantidad() async =>
-      Sqflite.firstIntValue(await _db.rawQuery('SELECT count(*) FROM cola')) ?? 0;
+      Sqflite.firstIntValue(await _db.rawQuery('SELECT count(*) FROM cola')) ??
+      0;
 }
 
 /// Implementación en memoria (pruebas).

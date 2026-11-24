@@ -4,7 +4,8 @@ library;
 enum OrigenMarcacion { enLinea, sinConexion }
 
 extension OrigenApi on OrigenMarcacion {
-  String get api => this == OrigenMarcacion.enLinea ? 'EN_LINEA' : 'SIN_CONEXION';
+  String get api =>
+      this == OrigenMarcacion.enLinea ? 'EN_LINEA' : 'SIN_CONEXION';
 }
 
 /// Marcación capturada en el dispositivo. Se persiste en la cola local ANTES de enviarse
@@ -34,7 +35,8 @@ class MarcacionPendiente {
   final bool confirmarDuplicado;
   final int intentos;
 
-  MarcacionPendiente copiar({OrigenMarcacion? origen, bool? confirmarDuplicado, int? intentos}) =>
+  MarcacionPendiente copiar(
+          {OrigenMarcacion? origen, bool? confirmarDuplicado, int? intentos}) =>
       MarcacionPendiente(
         idvia: idvia,
         datevia: datevia,
@@ -68,13 +70,16 @@ class MarcacionPendiente {
         'intentos': intentos,
       };
 
-  static MarcacionPendiente desdeFila(Map<String, Object?> f) => MarcacionPendiente(
+  static MarcacionPendiente desdeFila(Map<String, Object?> f) =>
+      MarcacionPendiente(
         idvia: f['idvia']! as String,
         datevia: DateTime.parse(f['datevia']! as String),
         lat: (f['lat']! as num).toDouble(),
         lon: (f['lon']! as num).toDouble(),
         precision: (f['precision']! as num).toInt(),
-        origen: f['origen'] == 'EN_LINEA' ? OrigenMarcacion.enLinea : OrigenMarcacion.sinConexion,
+        origen: f['origen'] == 'EN_LINEA'
+            ? OrigenMarcacion.enLinea
+            : OrigenMarcacion.sinConexion,
         confirmarDuplicado: f['confirmar_duplicado'] == 1,
         intentos: (f['intentos'] as num?)?.toInt() ?? 0,
       );
@@ -105,7 +110,8 @@ class Confirmacion {
   final int? distancia;
 
   bool get correcta => estvia == 'CORRECTO';
-  String get tipoTexto => tipvia == 'R' ? 'Retiro' : (tipvia == 'E' ? 'Entrega' : 'Sin punto');
+  String get tipoTexto =>
+      tipvia == 'R' ? 'Retiro' : (tipvia == 'E' ? 'Entrega' : 'Sin punto');
 
   factory Confirmacion.desdeJson(Map<String, dynamic> j) => Confirmacion(
         idvia: j['idvia'] as String,

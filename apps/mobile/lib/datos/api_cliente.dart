@@ -35,7 +35,11 @@ abstract class ApiMarcaciones {
 }
 
 class ApiCliente implements ApiMarcaciones {
-  ApiCliente({required this.baseUrl, required this.token, required this.appVersion, http.Client? cliente})
+  ApiCliente(
+      {required this.baseUrl,
+      required this.token,
+      required this.appVersion,
+      http.Client? cliente})
       : _http = cliente ?? http.Client();
 
   final String baseUrl;
@@ -56,16 +60,21 @@ class ApiCliente implements ApiMarcaciones {
             body: jsonEncode(m.aJson(appVersion)),
           )
           .timeout(const Duration(seconds: 10));
-      final cuerpo = r.body.isEmpty ? <String, dynamic>{} : jsonDecode(r.body) as Map<String, dynamic>;
+      final cuerpo = r.body.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(r.body) as Map<String, dynamic>;
       if (r.statusCode == 200 || r.statusCode == 201) {
         return EnvioConfirmado(Confirmacion.desdeJson(cuerpo));
       }
       if (r.statusCode == 409 && cuerpo['codigo'] == 'POSIBLE_DUPLICADO') {
-        return EnvioPosibleDuplicado(cuerpo['mensaje'] as String? ?? 'Posible marcación duplicada.');
+        return EnvioPosibleDuplicado(
+            cuerpo['mensaje'] as String? ?? 'Posible marcación duplicada.');
       }
-      if (r.statusCode >= 500 || r.statusCode == 429 || r.statusCode == 401) return EnvioReintentable();
+      if (r.statusCode >= 500 || r.statusCode == 429 || r.statusCode == 401)
+        return EnvioReintentable();
       final msg = cuerpo['message'];
-      return EnvioRechazado(r.statusCode, msg is List ? msg.join('; ') : '${msg ?? 'Error ${r.statusCode}'}');
+      return EnvioRechazado(r.statusCode,
+          msg is List ? msg.join('; ') : '${msg ?? 'Error ${r.statusCode}'}');
     } on SocketException {
       return EnvioReintentable();
     } on TimeoutException {
@@ -86,14 +95,19 @@ class ApiCliente implements ApiMarcaciones {
         .toList();
   }
 
-  Future<Map<String, dynamic>> enrolarDispositivo(String idinst, String modelo, String so) async {
+  Future<Map<String, dynamic>> enrolarDispositivo(
+      String idinst, String modelo, String so) async {
     final r = await _http.post(
       Uri.parse('$baseUrl/auth/dispositivos'),
-      headers: {'content-type': 'application/json', 'authorization': 'Bearer ${await token()}'},
+      headers: {
+        'content-type': 'application/json',
+        'authorization': 'Bearer ${await token()}'
+      },
       body: jsonEncode({'idinst': idinst, 'modelo': modelo, 'so': so}),
     );
     if (r.statusCode != 201 && r.statusCode != 200) {
-      throw EnrolamientoRechazado('Número no registrado. Contacte al Administrador.');
+      throw EnrolamientoRechazado(
+          'Número no registrado. Contacte al Administrador.');
     }
     return jsonDecode(r.body) as Map<String, dynamic>;
   }

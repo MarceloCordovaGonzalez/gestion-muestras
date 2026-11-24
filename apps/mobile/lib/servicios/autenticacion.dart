@@ -10,7 +10,8 @@ import '../datos/api_cliente.dart';
 /// CU-01: OTP por SMS (Identity Platform) y enrolamiento del dispositivo.
 /// La sesión se renueva automáticamente (refresh token de Identity Platform).
 class ServicioAutenticacion {
-  ServicioAutenticacion({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
+  ServicioAutenticacion({FirebaseAuth? auth})
+      : _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseAuth _auth;
   static const _almacen = FlutterSecureStorage();
@@ -51,7 +52,8 @@ class ServicioAutenticacion {
   Future<void> validarCodigo(String codigo) async {
     final id = _verificationId;
     if (id == null) throw StateError('Solicite primero el código.');
-    await _auth.signInWithCredential(PhoneAuthProvider.credential(verificationId: id, smsCode: codigo));
+    await _auth.signInWithCredential(
+        PhoneAuthProvider.credential(verificationId: id, smsCode: codigo));
   }
 
   /// Paso 6: enrolar el dispositivo. El identificador de instalación se genera una sola vez.
@@ -61,7 +63,8 @@ class ServicioAutenticacion {
       idinst = const Uuid().v4();
       await _almacen.write(key: 'gm_idinst', value: idinst);
     }
-    await api.enrolarDispositivo(idinst, Platform.operatingSystemVersion, Platform.operatingSystem);
+    await api.enrolarDispositivo(
+        idinst, Platform.operatingSystemVersion, Platform.operatingSystem);
     await token(renovar: true);
   }
 

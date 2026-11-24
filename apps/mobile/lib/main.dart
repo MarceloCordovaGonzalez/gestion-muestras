@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
+// TODO(MVP1): migrar a package:material_ui (Flutter 3.47+ depreca material.dart).
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 
 import 'config.dart';
@@ -15,18 +17,26 @@ import 'ui/pantalla_ingreso.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // google-services.json / GoogleService-Info.plist por ambiente
+  await Firebase
+      .initializeApp(); // google-services.json / GoogleService-Info.plist por ambiente
 
   final auth = ServicioAutenticacion();
-  final api = ApiCliente(baseUrl: Config.apiUrl, token: auth.token, appVersion: Config.appVersion);
-  final marcacion = ServicioMarcacion(cola: await ColaSqlCipher.abrir(), api: api);
+  final api = ApiCliente(
+      baseUrl: Config.apiUrl, token: auth.token, appVersion: Config.appVersion);
+  final marcacion =
+      ServicioMarcacion(cola: await ColaSqlCipher.abrir(), api: api);
 
   // Sincroniza la cola al recuperar conectividad (RF-08).
   Connectivity().onConnectivityChanged.listen((estados) {
-    if (estados.any((e) => e != ConnectivityResult.none)) unawaited(marcacion.sincronizar());
+    if (estados.any((e) => e != ConnectivityResult.none))
+      unawaited(marcacion.sincronizar());
   });
 
-  runApp(AppConductor(auth: auth, api: api, marcacion: marcacion, ubicacion: ServicioUbicacion()));
+  runApp(AppConductor(
+      auth: auth,
+      api: api,
+      marcacion: marcacion,
+      ubicacion: ServicioUbicacion()));
 }
 
 class AppConductor extends StatefulWidget {
@@ -56,14 +66,22 @@ class _AppConductorState extends State<AppConductor> {
     final tema = ThemeData(
       colorSchemeSeed: const Color(0xFF1F5FD1),
       useMaterial3: true,
-      textTheme: const TextTheme(bodyMedium: TextStyle(fontSize: 16), bodyLarge: TextStyle(fontSize: 18)),
+      textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontSize: 16),
+          bodyLarge: TextStyle(fontSize: 18)),
     );
     return MaterialApp(
       title: 'Gestión de Muestras',
       theme: tema,
       home: _enrolado
-          ? PantallaInicio(api: widget.api, marcacion: widget.marcacion, ubicacion: widget.ubicacion)
-          : PantallaIngreso(auth: widget.auth, api: widget.api, alEnrolar: () => setState(() => _enrolado = true)),
+          ? PantallaInicio(
+              api: widget.api,
+              marcacion: widget.marcacion,
+              ubicacion: widget.ubicacion)
+          : PantallaIngreso(
+              auth: widget.auth,
+              api: widget.api,
+              alEnrolar: () => setState(() => _enrolado = true)),
     );
   }
 }

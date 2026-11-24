@@ -37,7 +37,8 @@ class MarcacionRechazada extends ResultadoMarcacion {
 /// 2. Se intenta el envío; si es transitorio, queda en la cola con su hora original.
 /// 3. La sincronización reenvía con el mismo IDVIA (idempotente: sin duplicados en el servidor).
 class ServicioMarcacion {
-  ServicioMarcacion({required this.cola, required this.api, Uuid? uuid}) : _uuid = uuid ?? const Uuid();
+  ServicioMarcacion({required this.cola, required this.api, Uuid? uuid})
+      : _uuid = uuid ?? const Uuid();
 
   final ColaLocal cola;
   final ApiMarcaciones api;
@@ -68,8 +69,10 @@ class ServicioMarcacion {
 
   /// RN-07: el conductor confirma registrar el posible duplicado.
   Future<ResultadoMarcacion> confirmarDuplicado(String idvia) async {
-    final m = (await cola.pendientes()).where((x) => x.idvia == idvia).firstOrNull;
-    if (m == null) return MarcacionRechazada('La marcación ya no está pendiente.');
+    final m =
+        (await cola.pendientes()).where((x) => x.idvia == idvia).firstOrNull;
+    if (m == null)
+      return MarcacionRechazada('La marcación ya no está pendiente.');
     final confirmada = m.copiar(confirmarDuplicado: true);
     await cola.actualizar(confirmada);
     return _enviarDesdeCola(confirmada);
@@ -85,7 +88,8 @@ class ServicioMarcacion {
     var enviadas = 0;
     try {
       for (final m in await cola.pendientes()) {
-        final r = await _enviarDesdeCola(m.copiar(origen: OrigenMarcacion.sinConexion));
+        final r = await _enviarDesdeCola(
+            m.copiar(origen: OrigenMarcacion.sinConexion));
         if (r is MarcacionConfirmada) {
           enviadas++;
           _confirmaciones.add(r.confirmacion);
@@ -111,7 +115,8 @@ class ServicioMarcacion {
         await cola.eliminar(m.idvia);
         return MarcacionRechazada(mensaje);
       case EnvioReintentable():
-        await cola.actualizar(m.copiar(origen: OrigenMarcacion.sinConexion, intentos: m.intentos + 1));
+        await cola.actualizar(m.copiar(
+            origen: OrigenMarcacion.sinConexion, intentos: m.intentos + 1));
         return MarcacionPendienteDeEnvio(m.idvia);
     }
   }
