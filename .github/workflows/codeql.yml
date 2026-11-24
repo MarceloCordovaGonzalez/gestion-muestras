@@ -25,6 +25,8 @@ jobs:
   dependencias:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    # Requiere «Dependency graph» activo en Settings › Code security; mientras tanto, no bloquea.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4

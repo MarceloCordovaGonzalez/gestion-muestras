@@ -150,9 +150,13 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test --coverage
+      - name: Formato (muestra la diferencia si no cumple)
+        if: always()
+        run: |
+          dart format lib test
+          git diff --exit-code -- lib test
 
   infra:
     needs: cambios
