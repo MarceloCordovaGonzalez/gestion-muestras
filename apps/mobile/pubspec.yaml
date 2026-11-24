@@ -1,0 +1,33 @@
+name: gestion_muestras
+description: App del conductor – Gestión de Muestras (Piloto 1 / MVP1).
+publish_to: 'none'
+
+# Versión gestionada por release-please (componente «mobile»): x.y.z+<build>.
+version: 0.1.0+1 # x-release-please-version
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.24.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.3.3
+  firebase_crashlytics: ^4.2.0
+  geolocator: ^13.0.2
+  http: ^1.2.2
+  connectivity_plus: ^6.1.0
+  sqflite_sqlcipher: ^3.1.0
+  flutter_secure_storage: ^9.2.2
+  path: ^1.9.0
+  uuid: ^4.5.1
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

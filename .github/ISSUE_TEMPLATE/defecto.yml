@@ -1,0 +1,39 @@
+name: Defecto
+description: Comportamiento incorrecto respecto de la especificación
+labels: ['tipo: defecto']
+body:
+  - type: dropdown
+    id: ambiente
+    attributes:
+      label: Ambiente
+      options: [dev, qa, prod]
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes:
+      label: Versión (api-vX, web-vX, mobile-vX)
+  - type: dropdown
+    id: severidad
+    attributes:
+      label: Severidad
+      options:
+        [
+          'S1 – Operación detenida',
+          'S2 – Función crítica afectada',
+          'S3 – Función menor',
+          'S4 – Cosmético',
+        ]
+    validations: { required: true }
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+    validations: { required: true }
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Resultado esperado (cite RF/RN) y resultado obtenido
+    validations: { required: true }
+  - type: markdown
+    attributes:
+      value: '⚠️ No incluya RUT, celulares ni coordenadas reales de conductores (RNF-05).'

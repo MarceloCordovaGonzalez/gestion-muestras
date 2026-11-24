@@ -1,0 +1,22 @@
+# Etiquetas del repositorio (aplicadas por scripts/bootstrap-github.sh).
+- { name: 'fase: MVP1', color: '1F5FD1', description: 'Visibilidad diaria' }
+- { name: 'fase: MVP2', color: '2E8B57', description: 'Atrasos y ausencias' }
+- { name: 'fase: MVP3', color: '8E44AD', description: 'Confiabilidad de la ubicación' }
+- { name: 'tipo: requerimiento', color: '0E8A16', description: 'Funcionalidad trazada a un RF' }
+- { name: 'tipo: defecto', color: 'C0392B', description: 'Comportamiento incorrecto' }
+- { name: 'tipo: deuda-tecnica', color: 'FBCA04', description: '' }
+- { name: 'comp: api', color: 'BFD4F2', description: '' }
+- { name: 'comp: web', color: 'BFD4F2', description: '' }
+- { name: 'comp: mobile', color: 'BFD4F2', description: '' }
+- { name: 'comp: domain', color: 'BFD4F2', description: '' }
+- { name: 'comp: infra', color: 'BFD4F2', description: '' }
+- {
+    name: 'flag: desactivado',
+    color: 'E67E22',
+    description: 'Código detrás de un indicador apagado (p. ej. MEJ-18)',
+  }
+- {
+    name: 'bloqueado: decisión cliente',
+    color: 'D93F0B',
+    description: 'Requiere decisión pendiente del cliente',
+  }

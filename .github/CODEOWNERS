@@ -1,0 +1,6 @@
+# Revisores obligatorios por área. Reemplace los usuarios por los del equipo (Modelo 14.1).
+*                         @MarceloCordovaGonzalez
+/packages/domain/         @MarceloCordovaGonzalez
+/apps/api/prisma/         @MarceloCordovaGonzalez
+/infra/                   @MarceloCordovaGonzalez
+/.github/                 @MarceloCordovaGonzalez

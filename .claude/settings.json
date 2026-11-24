@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm typecheck*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm --filter * test*)",
+      "Bash(pnpm --filter * lint*)",
+      "Bash(pnpm --filter * build)",
+      "Bash(pnpm db:up)",
+      "Bash(flutter analyze*)",
+      "Bash(flutter test*)",
+      "Bash(dart format*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git switch -c *)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr diff*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push * main)",
+      "Bash(terraform apply*)",
+      "Bash(terraform destroy*)",
+      "Read(./.env)",
+      "Read(./**/.env)",
+      "Read(./**/*.pem)",
+      "Read(./**/service-account*.json)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in *.ts|*.tsx|*.json|*.md|*.yml|*.yaml) npx --no-install prettier --write \"$f\" >/dev/null 2>&1 || true;; *.dart) dart format \"$f\" >/dev/null 2>&1 || true;; esac"
+          }
+        ]
+      }
+    ]
+  }
+}

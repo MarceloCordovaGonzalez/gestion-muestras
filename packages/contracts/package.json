@@ -1,0 +1,15 @@
+{
+  "name": "@gm/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Contrato OpenAPI /v1 y tipos generados para la Web",
+  "scripts": {
+    "generar": "openapi-typescript openapi.yaml -o generated/api.d.ts",
+    "lint": "redocly lint openapi.yaml",
+    "test": "redocly lint openapi.yaml"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.26.0",
+    "openapi-typescript": "^7.4.4"
+  }
+}

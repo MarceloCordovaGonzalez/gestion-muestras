@@ -1,0 +1,52 @@
+# Dependencias y compilados
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# Entorno y secretos (nunca versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+service-account*.json
+
+# Terraform
+infra/terraform/**/.terraform/
+infra/terraform/**/*.tfstate*
+infra/terraform/**/*.tfvars
+!infra/terraform/**/*.tfvars.example
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins*
+apps/mobile/build/
+apps/mobile/.packages
+apps/mobile/ios/Pods/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+
+# Datos del cliente (cargar solo en QA, no versionar planillas reales)
+db/qa/*.xlsx
+db/comunas/*.shp
+db/comunas/*.shx
+db/comunas/*.dbf
+db/comunas/*.prj
+db/comunas/*.geojson
+
+# IDE / SO
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Claude Code (configuración local del desarrollador)
+.claude/settings.local.json

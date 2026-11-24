@@ -1,0 +1,13 @@
+packages:
+  - 'apps/api'
+  - 'apps/web'
+  - 'packages/*'
+
+# pnpm 10 no ejecuta scripts de instalación salvo los autorizados explícitamente.
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - 'prisma'
+  - '@swc/core'
+  - 'esbuild'
+  - 'protobufjs'
