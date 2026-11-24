@@ -28,8 +28,9 @@ Future<void> main() async {
 
   // Sincroniza la cola al recuperar conectividad (RF-08).
   Connectivity().onConnectivityChanged.listen((estados) {
-    if (estados.any((e) => e != ConnectivityResult.none))
+    if (estados.any((e) => e != ConnectivityResult.none)) {
       unawaited(marcacion.sincronizar());
+    }
   });
 
   runApp(AppConductor(

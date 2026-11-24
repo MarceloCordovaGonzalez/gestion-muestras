@@ -71,8 +71,9 @@ class ServicioMarcacion {
   Future<ResultadoMarcacion> confirmarDuplicado(String idvia) async {
     final m =
         (await cola.pendientes()).where((x) => x.idvia == idvia).firstOrNull;
-    if (m == null)
+    if (m == null) {
       return MarcacionRechazada('La marcación ya no está pendiente.');
+    }
     final confirmada = m.copiar(confirmarDuplicado: true);
     await cola.actualizar(confirmada);
     return _enviarDesdeCola(confirmada);

@@ -70,8 +70,9 @@ class ApiCliente implements ApiMarcaciones {
         return EnvioPosibleDuplicado(
             cuerpo['mensaje'] as String? ?? 'Posible marcación duplicada.');
       }
-      if (r.statusCode >= 500 || r.statusCode == 429 || r.statusCode == 401)
+      if (r.statusCode >= 500 || r.statusCode == 429 || r.statusCode == 401) {
         return EnvioReintentable();
+      }
       final msg = cuerpo['message'];
       return EnvioRechazado(r.statusCode,
           msg is List ? msg.join('; ') : '${msg ?? 'Error ${r.statusCode}'}');

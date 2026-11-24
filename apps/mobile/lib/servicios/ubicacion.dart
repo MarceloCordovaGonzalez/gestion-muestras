@@ -21,12 +21,15 @@ class ServicioUbicacion {
       throw PermisoUbicacionDenegado(false);
     }
     var permiso = await Geolocator.checkPermission();
-    if (permiso == LocationPermission.denied)
+    if (permiso == LocationPermission.denied) {
       permiso = await Geolocator.requestPermission();
-    if (permiso == LocationPermission.denied)
+    }
+    if (permiso == LocationPermission.denied) {
       throw PermisoUbicacionDenegado(false);
-    if (permiso == LocationPermission.deniedForever)
+    }
+    if (permiso == LocationPermission.deniedForever) {
       throw PermisoUbicacionDenegado(true);
+    }
 
     final pos = await Geolocator.getCurrentPosition(
       locationSettings: const LocationSettings(
