@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: API Gestión de Muestras
+  version: 0.1.0
+  description: |
+    Contrato /v1 del Piloto 1 (MVP1). Modelo de Arquitectura v1.4, sección 9.
+    Autenticación: JWT de Google Identity Platform (Bearer). Perfiles: CONDUCTOR, ADMINISTRADOR.
+servers:
+  - url: http://localhost:8080/v1
+    description: Desarrollo local
+security:
+  - bearer: []
+tags:
+  - name: identidad
+  - name: marcaciones
+  - name: consultas
+  - name: maestros
+  - name: parametros
+paths:
+  /salud:
+    get:
+      security: []
+      summary: Estado de la API y versión mínima de la App
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  estado: { type: string, example: OK }
+                  version: { type: string }
+                  versionMinimaApp: { type: string }
+  /auth/dispositivos:
+    post:
+      tags: [identidad]
+      summary: Enrola el dispositivo tras el OTP (CU-01)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idinst]
+              properties:
+                idinst: { type: string, maxLength: 128 }
+                modelo: { type: string }
+                so: { type: string }
+      responses:
+        '201':
+          description: Dispositivo enrolado. La App debe renovar el token para obtener los claims.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rutcon: { type: integer }
+                  iddis: { type: string, format: uuid }
+                  perfil: { $ref: '#/components/schemas/Perfil' }
+                  reemplazo: { type: boolean }
+                  renovarToken: { type: boolean }
+        '403': { $ref: '#/components/responses/Prohibido' }
+  /marcaciones:
+    post:
+      tags: [marcaciones]
+      summary: Registra una marcación (CU-02). Idempotente por idvia.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CrearMarcacion' }
+      responses:
+        '200':
+          description: Confirmación (RF-06)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Confirmacion' }
+        '409':
+          description: POSIBLE_DUPLICADO (RN-07). Reenviar con confirmarDuplicado = true.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codigo: { type: string, enum: [POSIBLE_DUPLICADO] }
+                  mensaje: { type: string }
+                  idviaPrevio: { type: string, format: uuid }
+        '403': { $ref: '#/components/responses/Prohibido' }
+  /marcaciones/hoy:
+    get:
+      tags: [marcaciones]
+      summary: Historial del día de quien marca
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Confirmacion' }
+  /mapa:
+    get:
+      tags: [consultas]
+      summary: Puntos agrupados por centro o laboratorio (CU-03)
+      parameters:
+        - $ref: '#/components/parameters/Fecha'
+        - $ref: '#/components/parameters/Comuna'
+        - { name: tipo, in: query, schema: { type: string, enum: [R, E, ERROR, FUERA_RUTA] } }
+        - { name: conductor, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PuntoMapa' }
+  /dashboard/tendencia:
+    get:
+      tags: [consultas]
+      summary: Serie diaria de R y E del mes (RF-13)
+      parameters:
+        - { name: mes, in: query, schema: { type: string, pattern: '^\d{4}-\d{2}$' } }
+        - $ref: '#/components/parameters/Comuna'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PuntoTendencia' }
+  /dashboard/detalle:
+    get:
+      tags: [consultas]
+      summary: Siete cuadros del día (RN-08 a RN-13, RN-21)
+      parameters:
+        - $ref: '#/components/parameters/Fecha'
+        - $ref: '#/components/parameters/Comuna'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DetalleDiario' }
+  /pendientes-entrega:
+    get:
+      tags: [consultas]
+      summary: Retiros pendientes de entrega (RN-16). DESACTIVADO en MVP1 (MEJ-18).
+      parameters:
+        - $ref: '#/components/parameters/Fecha'
+      responses:
+        '200': { description: OK }
+        '404': { description: Funcionalidad no habilitada }
+  /avisos:
+    get:
+      tags: [consultas]
+      summary: Avisos del día (fuera de ruta, marcaciones sospechosas)
+      parameters:
+        - $ref: '#/components/parameters/Fecha'
+      responses:
+        '200': { description: OK }
+  /importaciones:
+    post:
+      tags: [maestros]
+      summary: Carga y validación previa de la planilla (CU-05). La hoja VIAJE se ignora.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                archivo: { type: string, format: binary }
+      responses:
+        '201': { description: Resumen de validación con errores y geocercas solapadas }
+  /importaciones/{id}/confirmar:
+    post:
+      tags: [maestros]
+      summary: Aplica una importación validada
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '201': { description: Aplicada }
+  /maestros/{recurso}:
+    get:
+      tags: [maestros]
+      summary: Consulta de datos maestros (CU-05)
+      parameters:
+        - {
+            name: recurso,
+            in: path,
+            required: true,
+            schema: { type: string, enum: [centros, laboratorios, conductores, rutas] },
+          }
+      responses:
+        '200': { description: OK }
+  /maestros/{recurso}/{codigo}/estado:
+    patch:
+      tags: [maestros]
+      summary: Baja o reactivación lógica (RN-19)
+      parameters:
+        - {
+            name: recurso,
+            in: path,
+            required: true,
+            schema: { type: string, enum: [centros, laboratorios, conductores] },
+          }
+        - { name: codigo, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estado: { type: string, enum: [ACTIVO, INACTIVO] }
+      responses:
+        '200': { description: OK }
+  /parametros:
+    get:
+      tags: [parametros]
+      summary: Parámetros de la empresa (RF-25)
+      responses:
+        '200': { description: OK }
+    put:
+      tags: [parametros]
+      summary: Actualiza parámetros de la empresa (RF-25, auditado)
+      responses:
+        '200': { description: OK }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    Fecha:
+      {
+        name: fecha,
+        in: query,
+        schema: { type: string, format: date },
+        description: 'Por defecto, hoy (America/Santiago)',
+      }
+    Comuna: { name: comuna, in: query, schema: { type: string } }
+  responses:
+    Prohibido:
+      description: Sin permiso, conductor no registrado o dispositivo revocado
+  schemas:
+    Perfil: { type: string, enum: [CONDUCTOR, ADMINISTRADOR] }
+    CrearMarcacion:
+      type: object
+      required: [idvia, datevia, lat, lon, precision, origen]
+      properties:
+        idvia: { type: string, format: uuid }
+        datevia: { type: string, format: date-time, example: '2026-09-30T12:02:25-03:00' }
+        lat: { type: number, example: -33.57691 }
+        lon: { type: number, example: -70.64935 }
+        precision:
+          { type: integer, minimum: 0, description: 'Metros. Solo registro en MVP1 (RF-09).' }
+        ubicacionSimulada: { type: boolean, description: 'MVP3. Se ignora en MVP1.' }
+        origen: { type: string, enum: [EN_LINEA, SIN_CONEXION] }
+        appVersion: { type: string }
+        confirmarDuplicado: { type: boolean }
+    Confirmacion:
+      type: object
+      properties:
+        idvia: { type: string, format: uuid }
+        fecha: { type: string, format: date }
+        hora: { type: string, example: '12:02:25' }
+        tipvia: { type: string, enum: [R, E], nullable: true }
+        estvia: { type: string, enum: [CORRECTO, ERROR] }
+        punto:
+          type: object
+          nullable: true
+          properties:
+            tipo: { type: string, enum: [CENTRO, LABORATORIO] }
+            codigo: { type: integer }
+            alias: { type: string }
+        comuna: { type: string }
+        fueraDeRuta: { type: boolean }
+        distancia: { type: integer, nullable: true }
+        moterr: { type: string, nullable: true }
+        repetida: { type: boolean }
+    PuntoMapa:
+      type: object
+      properties:
+        clave: { type: string }
+        tipo: { type: string, enum: [R, E, ERROR] }
+        codigo: { type: integer, nullable: true }
+        alias: { type: string, nullable: true }
+        comuna: { type: string }
+        lat: { type: number }
+        lon: { type: number }
+        radio: { type: integer, nullable: true }
+        cantidad: { type: integer }
+        fuera_de_ruta: { type: integer }
+        marcaciones:
+          type: array
+          items:
+            type: object
+            properties:
+              idvia: { type: string }
+              rutcon: { type: integer }
+              hora: { type: string }
+              estvia: { type: string }
+              fueraruta: { type: string }
+    PuntoTendencia:
+      type: object
+      properties:
+        fecha: { type: string, format: date }
+        etiqueta: { type: string, example: mi 30 }
+        retiros: { type: integer }
+        entregas: { type: integer }
+        conFueraDeRuta: { type: boolean }
+    DetalleDiario:
+      type: object
+      properties:
+        fecha: { type: string, format: date }
+        cabecera: { type: string, example: 30/9/2026 Miércoles }
+        retirosPlanificados: { type: integer }
+        retirosRealizados: { type: integer }
+        entregasRealizadas: { type: integer }
+        errores: { type: integer }
+        porcentajeRetiros: { type: number, nullable: true }
+        porcentajeErrores: { type: number, nullable: true }
+        retirosFueraDeRuta: { type: integer }

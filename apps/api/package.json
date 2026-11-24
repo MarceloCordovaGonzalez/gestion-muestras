@@ -1,0 +1,44 @@
+{
+  "name": "@gm/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API de Gestión de Muestras (NestJS, monolito modular)",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "node --watch --import @swc-node/register/esm-register src/main.ts",
+    "start": "node dist/main.js",
+    "job:planificacion": "node dist/jobs/planificacion-diaria.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "node --import @swc-node/register/esm-register --test \"test/**/*.test.ts\"",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@gm/domain": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@prisma/client": "^6.1.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "exceljs": "^4.4.0",
+    "firebase-admin": "^13.0.0",
+    "helmet": "^8.0.0",
+    "prisma": "^6.1.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^11.0.0",
+    "@swc-node/register": "^1.10.9",
+    "@swc/core": "^1.10.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

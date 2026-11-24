@@ -1,0 +1,169 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cambios:
+    runs-on: ubuntu-latest
+    outputs:
+      domain: ${{ steps.f.outputs.domain }}
+      api: ${{ steps.f.outputs.api }}
+      web: ${{ steps.f.outputs.web }}
+      mobile: ${{ steps.f.outputs.mobile }}
+      infra: ${{ steps.f.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            domain: ['packages/domain/**']
+            api: ['apps/api/**', 'packages/domain/**', 'packages/contracts/**']
+            web: ['apps/web/**', 'packages/contracts/**']
+            mobile: ['apps/mobile/**']
+            infra: ['infra/**']
+
+  titulo-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scopes: |
+            api
+            web
+            mobile
+            domain
+            contracts
+            db
+            infra
+            ci
+            docs
+            deps
+            release
+
+  calidad-ts:
+    needs: cambios
+    if: needs.cambios.outputs.domain == 'true' || needs.cambios.outputs.api == 'true' || needs.cambios.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm --filter @gm/domain build
+      - run: pnpm --filter @gm/api prisma:generate
+      - run: pnpm typecheck
+
+  dominio:
+    needs: cambios
+    if: needs.cambios.outputs.domain == 'true' || needs.cambios.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Reglas de negocio con cobertura ≥ 90 % (RNF-11)
+        run: pnpm --filter @gm/domain test:coverage
+
+  api:
+    needs: cambios
+    if: needs.cambios.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: gestion_muestras
+          POSTGRES_USER: gm
+          POSTGRES_PASSWORD: gm_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gm" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://gm:gm_ci@localhost:5432/gestion_muestras
+      AUTH_DEV_BYPASS: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @gm/domain build
+      - run: pnpm --filter @gm/api prisma:generate
+      - name: Migraciones sobre PostGIS
+        run: pnpm --filter @gm/api prisma:migrate
+      - run: pnpm --filter @gm/api test
+      - run: pnpm --filter @gm/api build
+      - name: Contrato OpenAPI
+        run: pnpm --filter @gm/contracts lint
+
+  web:
+    needs: cambios
+    if: needs.cambios.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @gm/web test
+      - run: pnpm --filter @gm/web build
+
+  mobile:
+    needs: cambios
+    if: needs.cambios.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test --coverage
+
+  infra:
+    needs: cambios
+    if: needs.cambios.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive infra/terraform
+      - run: |
+          for env in dev qa prod; do
+            terraform -chdir=infra/terraform/ambientes/$env init -backend=false
+            terraform -chdir=infra/terraform/ambientes/$env validate
+          done

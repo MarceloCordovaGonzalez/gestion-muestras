@@ -1,0 +1,31 @@
+name: Release Please
+
+# Mantiene un PR de release por componente (api, web, mobile, domain). Al fusionarlo se crean el
+# tag (p. ej. api-v0.2.0), el GitHub Release y el CHANGELOG. Ver docs/releases.md.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.rp.outputs.releases_created }}
+      api: ${{ steps.rp.outputs['apps/api--release_created'] }}
+      api_tag: ${{ steps.rp.outputs['apps/api--tag_name'] }}
+      web: ${{ steps.rp.outputs['apps/web--release_created'] }}
+      web_tag: ${{ steps.rp.outputs['apps/web--tag_name'] }}
+      mobile: ${{ steps.rp.outputs['apps/mobile--release_created'] }}
+      mobile_tag: ${{ steps.rp.outputs['apps/mobile--tag_name'] }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: rp
+        with:
+          # Token de una GitHub App o PAT fino para que los tags disparen los workflows de despliegue.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

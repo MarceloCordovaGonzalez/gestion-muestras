@@ -1,0 +1,160 @@
+name: Desplegar
+
+# Promoción entre ambientes (docs/releases.md):
+#   push a main            → dev  (automático, API y Web con la versión «main-<sha>»)
+#   tag api-v* / web-v*    → qa   (automático) → prod (aprobación manual en el ambiente «prod»)
+#   tag mobile-v*          → Firebase App Distribution (grupo piloto) → tiendas (manual)
+on:
+  push:
+    branches: [main]
+    tags: ['api-v*', 'web-v*', 'mobile-v*']
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: Ambiente destino
+        type: choice
+        options: [dev, qa, prod]
+        required: true
+
+permissions:
+  contents: read
+  id-token: write # Workload Identity Federation (sin llaves de cuenta de servicio)
+
+env:
+  REGION: southamerica-west1
+
+jobs:
+  contexto:
+    runs-on: ubuntu-latest
+    outputs:
+      componente: ${{ steps.c.outputs.componente }}
+      version: ${{ steps.c.outputs.version }}
+    steps:
+      - id: c
+        run: |
+          ref="${GITHUB_REF_NAME}"
+          case "$ref" in
+            api-v*)    echo "componente=api" >> "$GITHUB_OUTPUT";    echo "version=${ref#api-v}" >> "$GITHUB_OUTPUT" ;;
+            web-v*)    echo "componente=web" >> "$GITHUB_OUTPUT";    echo "version=${ref#web-v}" >> "$GITHUB_OUTPUT" ;;
+            mobile-v*) echo "componente=mobile" >> "$GITHUB_OUTPUT"; echo "version=${ref#mobile-v}" >> "$GITHUB_OUTPUT" ;;
+            *)         echo "componente=todos" >> "$GITHUB_OUTPUT";  echo "version=main-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+  # ---------------------------------------------------------------- API
+  api-imagen:
+    needs: contexto
+    if: needs.contexto.outputs.componente == 'api' || needs.contexto.outputs.componente == 'todos'
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      imagen: ${{ steps.img.outputs.imagen }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - id: img
+        run: |
+          IMG="${REGION}-docker.pkg.dev/${{ vars.GCP_ARTIFACT_PROJECT }}/gm/api:${{ needs.contexto.outputs.version }}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -f apps/api/Dockerfile -t "$IMG" .
+          docker push "$IMG"
+          echo "imagen=$IMG" >> "$GITHUB_OUTPUT"
+
+  api-dev:
+    needs: [contexto, api-imagen]
+    if: needs.contexto.outputs.componente == 'todos'
+    uses: ./.github/workflows/_desplegar-api.yml
+    with:
+      {
+        ambiente: dev,
+        imagen: '${{ needs.api-imagen.outputs.imagen }}',
+        version: '${{ needs.contexto.outputs.version }}',
+      }
+    secrets: inherit
+
+  api-qa:
+    needs: [contexto, api-imagen]
+    if: needs.contexto.outputs.componente == 'api'
+    uses: ./.github/workflows/_desplegar-api.yml
+    with:
+      {
+        ambiente: qa,
+        imagen: '${{ needs.api-imagen.outputs.imagen }}',
+        version: '${{ needs.contexto.outputs.version }}',
+      }
+    secrets: inherit
+
+  api-prod:
+    needs: [contexto, api-imagen, api-qa]
+    uses: ./.github/workflows/_desplegar-api.yml
+    with:
+      {
+        ambiente: prod,
+        imagen: '${{ needs.api-imagen.outputs.imagen }}',
+        version: '${{ needs.contexto.outputs.version }}',
+        canario: 10,
+      }
+    secrets: inherit
+
+  # ---------------------------------------------------------------- WEB
+  web:
+    needs: contexto
+    if: needs.contexto.outputs.componente == 'web' || needs.contexto.outputs.componente == 'todos'
+    strategy:
+      max-parallel: 1
+      matrix:
+        ambiente: ${{ fromJSON(needs.contexto.outputs.componente == 'todos' && '["dev"]' || '["qa","prod"]') }}
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.ambiente }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @gm/web build
+        env:
+          VITE_API_URL: ${{ vars.API_URL }}
+          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.GOOGLE_MAPS_API_KEY }}
+          VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.GCP_PROJECT }}
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud storage rsync apps/web/dist "gs://${{ vars.WEB_BUCKET }}" --recursive --delete-unmatched-destination-objects
+
+  # ---------------------------------------------------------------- MOBILE
+  mobile:
+    needs: contexto
+    if: needs.contexto.outputs.componente == 'mobile'
+    runs-on: ubuntu-latest
+    environment: qa
+    defaults:
+      run: { working-directory: apps/mobile }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: { channel: stable, cache: true }
+      - name: Plataformas y configuración de Firebase
+        run: |
+          flutter create . --platforms android --org cl.techanalytic --project-name gestion_muestras
+          echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+      - run: flutter pub get
+      - run: >
+          flutter build apk --release
+          --build-name=${{ needs.contexto.outputs.version }} --build-number=${{ github.run_number }}
+          --dart-define=API_URL=${{ vars.API_URL }} --dart-define=AMBIENTE=qa
+          --dart-define=APP_VERSION=${{ needs.contexto.outputs.version }}
+      - uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ vars.FIREBASE_ANDROID_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_DISTRIBUTION_CREDENTIALS }}
+          groups: piloto-conductores
+          file: apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: 'Versión ${{ needs.contexto.outputs.version }} – ver CHANGELOG de mobile'

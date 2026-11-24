@@ -1,0 +1,34 @@
+name: Requerimiento
+description: Funcionalidad trazada a la Especificación Funcional
+labels: ['tipo: requerimiento']
+body:
+  - type: input
+    id: rf
+    attributes:
+      label: Requerimiento (RF / MEJ)
+      placeholder: RF-10
+    validations: { required: true }
+  - type: dropdown
+    id: fase
+    attributes:
+      label: Fase
+      options: [MVP1, MVP2, MVP3, Posterior]
+    validations: { required: true }
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componentes
+      multiple: true
+      options: [api, web, mobile, domain, db, infra]
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Descripción
+      description: Qué se necesita y para qué.
+    validations: { required: true }
+  - type: textarea
+    id: aceptacion
+    attributes:
+      label: Criterios de aceptación
+      description: Formato «Dado … cuando … entonces …», copiados de la especificación.
+    validations: { required: true }

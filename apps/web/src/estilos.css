@@ -1,0 +1,250 @@
+:root {
+  --retiro: #1f5fd1;
+  --entrega: #c2187a;
+  --fuera: #e67e22;
+  --error: #7f8c8d;
+  --fondo: #f5f6f8;
+  --texto: #1d2330;
+  --borde: #d9dde5;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--texto);
+  background: var(--fondo);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+h1 {
+  font-size: 1.4rem;
+  margin: 0 1rem 0 0;
+}
+h2 {
+  font-size: 1.1rem;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+.menu {
+  background: #111827;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  gap: 0.25rem;
+}
+.menu a {
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+.menu a.active,
+.menu a:hover {
+  background: #1f2937;
+  color: #fff;
+}
+.marca {
+  margin-bottom: 1rem;
+}
+.salir {
+  margin-top: auto;
+  background: none;
+  border: 1px solid #374151;
+  color: #cbd5e1;
+  padding: 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.insignia {
+  background: var(--fuera);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+}
+main {
+  padding: 1.5rem;
+  overflow: auto;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+.filtros label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 0.25rem;
+}
+input,
+select,
+button {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+button {
+  background: var(--retiro);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.tarjeta {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.cuadros {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+.cuadro {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-top: 4px solid #94a3b8;
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+.cuadro-num {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+.cuadro-titulo {
+  font-size: 0.9rem;
+}
+.cuadro-valor {
+  font-size: 1.8rem;
+}
+
+.mapa {
+  height: 70vh;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  background: #e5e7eb;
+}
+.marcador {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  position: relative;
+  cursor: pointer;
+}
+.bandera {
+  position: absolute;
+  top: -12px;
+  right: -14px;
+  background: #111827;
+  color: #fff;
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 6px;
+}
+.advertencia {
+  position: absolute;
+  bottom: -14px;
+  left: 4px;
+  font-size: 12px;
+  color: var(--fuera);
+}
+.leyenda {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+.leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.leyenda-item i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.detalle-punto ul {
+  padding-left: 1rem;
+  margin: 0.25rem 0 0;
+}
+
+.avisos li {
+  background: #fff;
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--error);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  list-style: none;
+}
+.avisos li.fuera {
+  border-left-color: var(--fuera);
+}
+.aviso {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 0.5rem;
+  border-radius: 6px;
+}
+[role='alert'] {
+  color: #b91c1c;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  border-bottom: 1px solid var(--borde);
+  padding: 0.35rem;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.ingreso {
+  max-width: 360px;
+  margin: 10vh auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ingreso label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.centrado {
+  text-align: center;
+  margin-top: 20vh;
+}

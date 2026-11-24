@@ -1,0 +1,154 @@
+// Cliente Prisma para los mantenedores y consultas simples.
+// La fuente de verdad del esquema son las migraciones SQL (prisma/migrations), que incluyen
+// PostGIS, columnas generadas y seguridad por fila. Las consultas espaciales usan $queryRaw.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis, pgcrypto]
+}
+
+model Comuna {
+  codcom    String                   @id @db.VarChar(10)
+  nomcom    String                   @unique @db.VarChar(60)
+  region    String                   @db.VarChar(60)
+  provincia String?                  @db.VarChar(60)
+  geom      Unsupported("geometry")
+
+  @@map("comuna")
+}
+
+model Laboratorio {
+  codemp  String                    @db.VarChar(10)
+  codlab  Int
+  comlab  String                    @db.VarChar(60)
+  deslab  String                    @db.VarChar(120)
+  alilab  String                    @db.VarChar(40)
+  dirlab  String?                   @db.VarChar(150)
+  latlab  Decimal                   @db.Decimal(9, 6)
+  lonlab  Decimal                   @db.Decimal(9, 6)
+  radlab  Int?
+  estlab  String                    @default("ACTIVO") @db.VarChar(10)
+  geo     Unsupported("geography")?
+  usrcre  String                    @default("sistema") @db.VarChar(120)
+  datecre DateTime                  @default(now()) @db.Timestamptz
+  usract  String?                   @db.VarChar(120)
+  dateact DateTime?                 @db.Timestamptz
+
+  @@id([codemp, codlab])
+  @@map("laboratorio")
+}
+
+model Centro {
+  codemp  String                    @db.VarChar(10)
+  codcen  Int
+  comcen  String                    @db.VarChar(60)
+  descen  String                    @db.VarChar(120)
+  alicen  String                    @db.VarChar(40)
+  dircen  String?                   @db.VarChar(150)
+  latcen  Decimal                   @db.Decimal(9, 6)
+  loncen  Decimal                   @db.Decimal(9, 6)
+  radcen  Int?
+  lun     String                    @db.Char(1)
+  mar     String                    @db.Char(1)
+  mie     String                    @db.Char(1)
+  jue     String                    @db.Char(1)
+  vie     String                    @db.Char(1)
+  sab     String                    @db.Char(1)
+  dom     String                    @db.Char(1)
+  codlab  Int
+  estcen  String                    @default("ACTIVO") @db.VarChar(10)
+  geo     Unsupported("geography")?
+  usrcre  String                    @default("sistema") @db.VarChar(120)
+  datecre DateTime                  @default(now()) @db.Timestamptz
+  usract  String?                   @db.VarChar(120)
+  dateact DateTime?                 @db.Timestamptz
+
+  @@id([codemp, codcen])
+  @@map("centro")
+}
+
+model Conductor {
+  codemp    String    @db.VarChar(10)
+  rutcon    Int
+  dvecon    String    @db.Char(1)
+  nomcon    String    @db.VarChar(60)
+  priapecon String    @db.VarChar(60)
+  segapecon String?   @db.VarChar(60)
+  alicon    String?   @db.VarChar(40)
+  celcon    String    @db.VarChar(15)
+  emailcon  String?   @db.VarChar(120)
+  estcon    String    @default("ACTIVO") @db.VarChar(10)
+  idusr     String?   @db.Uuid
+  usrcre    String    @default("sistema") @db.VarChar(120)
+  datecre   DateTime  @default(now()) @db.Timestamptz
+  usract    String?   @db.VarChar(120)
+  dateact   DateTime? @db.Timestamptz
+
+  @@id([codemp, rutcon])
+  @@unique([codemp, celcon])
+  @@map("conductor")
+}
+
+model Dispositivo {
+  iddis  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codemp String    @db.VarChar(10)
+  rutcon Int
+  idinst String    @db.VarChar(128)
+  modelo String?   @db.VarChar(80)
+  so     String?   @db.VarChar(40)
+  estado String    @default("ACTIVO") @db.VarChar(10)
+  fecenr DateTime  @default(now()) @db.Timestamptz
+  ultuso DateTime? @db.Timestamptz
+
+  @@map("dispositivo")
+}
+
+model RutaConductor {
+  idrut   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  codemp  String    @db.VarChar(10)
+  rutcon  Int
+  codcen  Int
+  horrut  DateTime  @db.Time
+  diasem  Int?      @db.SmallInt
+  tolmin  Int?      @db.SmallInt
+  vigdes  DateTime? @db.Date
+  vighas  DateTime? @db.Date
+  estrut  String    @default("ACTIVO") @db.VarChar(10)
+  usrcre  String    @default("sistema") @db.VarChar(120)
+  datecre DateTime  @default(now()) @db.Timestamptz
+  usract  String?   @db.VarChar(120)
+  dateact DateTime? @db.Timestamptz
+
+  @@map("ruta_conductor")
+}
+
+model Parametro {
+  codemp                   String   @id @db.VarChar(10)
+  tolerancia_min           Int      @default(15) @db.SmallInt
+  umbral_ausencia_min      Int      @default(120) @db.SmallInt
+  precision_max_m          Int      @default(50) @db.SmallInt
+  radio_defecto_m          Int      @default(100) @db.SmallInt
+  ventana_dedup_min        Int      @default(10) @db.SmallInt
+  plazo_pendiente_horas    Int      @default(3) @db.SmallInt
+  feature_deduplicacion      Boolean?
+  feature_pendientes_entrega Boolean?
+  canales_alerta           Json     @default("[\"WEB\"]")
+  dateact                  DateTime @default(now()) @db.Timestamptz
+
+  @@map("parametro")
+}
+
+model Feriado {
+  codemp      String   @db.VarChar(10)
+  fecha       DateTime @db.Date
+  descripcion String   @db.VarChar(120)
+
+  @@id([codemp, fecha])
+  @@map("feriado")
+}

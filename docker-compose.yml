@@ -1,0 +1,21 @@
+# Entorno local de desarrollo: PostgreSQL 16 + PostGIS 3 (equivalente a Cloud SQL).
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: gm-db
+    environment:
+      POSTGRES_DB: gestion_muestras
+      POSTGRES_USER: gm
+      POSTGRES_PASSWORD: gm_local_only
+      TZ: UTC
+    ports:
+      - '5432:5432'
+    volumes:
+      - gm-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U gm -d gestion_muestras']
+      interval: 5s
+      retries: 10
+
+volumes:
+  gm-db-data:

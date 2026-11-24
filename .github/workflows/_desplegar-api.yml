@@ -1,0 +1,64 @@
+name: _desplegar-api (reutilizable)
+
+on:
+  workflow_call:
+    inputs:
+      ambiente: { type: string, required: true }
+      imagen: { type: string, required: true }
+      version: { type: string, required: true }
+      canario:
+        description: Porcentaje de tráfico inicial para la nueva revisión (100 = directo)
+        type: number
+        default: 100
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    # El ambiente «prod» exige aprobación de revisores (configurado por scripts/bootstrap-github.sh).
+    environment: ${{ inputs.ambiente }}
+    env:
+      REGION: southamerica-west1
+      SERVICIO: gm-api
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Migraciones de base de datos (Cloud Run Job)
+        run: |
+          gcloud run jobs update gm-migraciones --project "${{ vars.GCP_PROJECT }}" --region "$REGION" \
+            --image "${{ inputs.imagen }}" --command node \
+            --args node_modules/prisma/build/index.js,migrate,deploy --quiet
+          gcloud run jobs execute gm-migraciones --project "${{ vars.GCP_PROJECT }}" --region "$REGION" --wait
+
+      - name: Nueva revisión sin tráfico
+        run: |
+          TAG="v$(echo '${{ inputs.version }}' | tr '.' '-' | cut -c1-40)"
+          gcloud run deploy "$SERVICIO" --project "${{ vars.GCP_PROJECT }}" --region "$REGION" \
+            --image "${{ inputs.imagen }}" --no-traffic --tag "$TAG" \
+            --update-env-vars "APP_VERSION=${{ inputs.version }}" --quiet
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Prueba de humo de la revisión
+        run: |
+          URL=$(gcloud run services describe "$SERVICIO" --project "${{ vars.GCP_PROJECT }}" --region "$REGION" \
+                --format "value(status.traffic.filter(tag=${TAG}).url)" | head -1)
+          curl -fsS "${URL}/v1/salud" | tee /dev/stderr | grep -q '"estado":"OK"'
+
+      - name: Tráfico (canario o completo)
+        run: |
+          gcloud run services update-traffic "$SERVICIO" --project "${{ vars.GCP_PROJECT }}" --region "$REGION" \
+            --to-tags "${TAG}=${{ inputs.canario }}" --quiet
+
+      - name: Promoción al 100 % tras el canario
+        if: inputs.canario < 100
+        run: |
+          sleep 600   # 10 min de observación; la reversión es: update-traffic --to-revisions <anterior>=100
+          gcloud run services update-traffic "$SERVICIO" --project "${{ vars.GCP_PROJECT }}" --region "$REGION" \
+            --to-tags "${TAG}=100" --quiet
