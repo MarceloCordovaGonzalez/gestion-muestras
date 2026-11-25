@@ -1,6 +1,6 @@
 import { obtenerToken } from '../auth/sesion';
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/v1';
+const BASE = import.meta.env.VITE_API_URL || '/v1'; // en dev, el proxy de Vite reenvía /v1 a la API
 
 export class ErrorApi extends Error {
   constructor(
