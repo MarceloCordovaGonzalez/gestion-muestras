@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Genera la plataforma Android de la App (una sola vez) y aplica la configuración del proyecto:

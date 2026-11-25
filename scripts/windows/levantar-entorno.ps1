@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Levanta el entorno integral local (SOLO DESARROLLO): PostgreSQL + PostGIS, pgAdmin, API y Web.

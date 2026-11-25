@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
   Ejecuta la App en el emulador o teléfono Android conectado, en modo desarrollo (sin Firebase).
