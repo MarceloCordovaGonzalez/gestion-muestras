@@ -3,6 +3,7 @@ import { AdvancedMarker, APIProvider, InfoWindow, Map, useMap } from '@vis.gl/re
 import { useEffect, useState } from 'react';
 import { api, type PuntoMapa } from '../api/cliente';
 import { COLORES, hoy } from '../estilo';
+import { MapaOsm } from './MapaOsm';
 
 const CENTRO_SANTIAGO = { lat: -33.4489, lng: -70.6693 };
 const CLAVE_MAPS = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '';
@@ -73,7 +74,8 @@ export function Mapa() {
 
       <div className="mapa">
         {CLAVE_MAPS === '' ? (
-          <p className="aviso">Defina VITE_GOOGLE_MAPS_API_KEY para visualizar el mapa.</p>
+          // Sin clave de Google Maps (desarrollo local): mapa OpenStreetMap (alternativa de ADR-05).
+          <MapaOsm puntos={puntos.data ?? []} ajustar={comuna !== ''} />
         ) : (
           <APIProvider apiKey={CLAVE_MAPS}>
             <Map
@@ -131,7 +133,7 @@ function Marcador({ p }: { p: PuntoMapa }) {
   );
 }
 
-function Detalle({ p }: { p: PuntoMapa }) {
+export function Detalle({ p }: { p: PuntoMapa }) {
   return (
     <div className="detalle-punto">
       <strong>{p.alias ?? 'Marcación en error'}</strong>
@@ -165,7 +167,7 @@ function AjustarZoom({ puntos }: { puntos: PuntoMapa[] }) {
   return null;
 }
 
-function Leyenda() {
+export function Leyenda() {
   const item = (color: string, texto: string, anillo = false) => (
     <span className="leyenda-item">
       <i

@@ -15,7 +15,10 @@ import {
   ParametrosController,
   ParametrosService,
 } from './modulos/parametros/parametros.service.js';
-import { PlanificacionService } from './modulos/planificacion/planificacion.service.js';
+import {
+  PlanificacionController,
+  PlanificacionService,
+} from './modulos/planificacion/planificacion.service.js';
 
 @Controller('salud')
 class SaludController {
@@ -47,6 +50,7 @@ class ModuloParametros {}
 @Module({
   imports: [ModuloComun],
   providers: [PlanificacionService],
+  controllers: [PlanificacionController],
   exports: [PlanificacionService],
 })
 class ModuloPlanificacion {}

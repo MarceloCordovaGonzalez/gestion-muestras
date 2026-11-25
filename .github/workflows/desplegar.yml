@@ -49,12 +49,12 @@ jobs:
     outputs:
       imagen: ${{ steps.img.outputs.imagen }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SA }}
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
       - id: img
         run: |
           IMG="${REGION}-docker.pkg.dev/${{ vars.GCP_ARTIFACT_PROJECT }}/gm/api:${{ needs.contexto.outputs.version }}"
@@ -110,9 +110,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ matrix.ambiente }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with: { node-version-file: .nvmrc, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @gm/web build
@@ -122,11 +122,11 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.GCP_PROJECT }}
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SA }}
-      - uses: google-github-actions/setup-gcloud@v2
+      - uses: google-github-actions/setup-gcloud@v3
       - run: gcloud storage rsync apps/web/dist "gs://${{ vars.WEB_BUCKET }}" --recursive --delete-unmatched-destination-objects
 
   # ---------------------------------------------------------------- MOBILE
@@ -138,7 +138,7 @@ jobs:
     defaults:
       run: { working-directory: apps/mobile }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with: { channel: stable, cache: true }
       - name: Plataformas y configuración de Firebase

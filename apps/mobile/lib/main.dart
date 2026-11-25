@@ -10,6 +10,7 @@ import 'config.dart';
 import 'datos/api_cliente.dart';
 import 'datos/cola_local.dart';
 import 'servicios/autenticacion.dart';
+import 'servicios/autenticacion_desarrollo.dart';
 import 'servicios/sincronizacion.dart';
 import 'servicios/ubicacion.dart';
 import 'ui/pantalla_inicio.dart';
@@ -17,10 +18,15 @@ import 'ui/pantalla_ingreso.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase
-      .initializeApp(); // google-services.json / GoogleService-Info.plist por ambiente
-
-  final auth = ServicioAutenticacion();
+  final Autenticacion auth;
+  if (Config.modoDesarrollo) {
+    // Solo ambiente dev: sin Firebase, autenticación simulada contra AUTH_DEV_BYPASS.
+    auth = await AutenticacionDesarrollo.crear();
+  } else {
+    // google-services.json / GoogleService-Info.plist por ambiente.
+    await Firebase.initializeApp();
+    auth = ServicioAutenticacion();
+  }
   final api = ApiCliente(
       baseUrl: Config.apiUrl, token: auth.token, appVersion: Config.appVersion);
   final marcacion =
@@ -49,7 +55,7 @@ class AppConductor extends StatefulWidget {
     required this.ubicacion,
   });
 
-  final ServicioAutenticacion auth;
+  final Autenticacion auth;
   final ApiCliente api;
   final ServicioMarcacion marcacion;
   final ServicioUbicacion ubicacion;

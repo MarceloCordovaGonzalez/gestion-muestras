@@ -22,7 +22,7 @@ jobs:
       mobile: ${{ steps.rp.outputs['apps/mobile--release_created'] }}
       mobile_tag: ${{ steps.rp.outputs['apps/mobile--tag_name'] }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: rp
         with:
           # Token de una GitHub App o PAT fino para que los tags disparen los workflows de despliegue.

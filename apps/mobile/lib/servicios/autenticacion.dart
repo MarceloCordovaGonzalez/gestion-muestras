@@ -7,9 +7,21 @@ import 'package:uuid/uuid.dart';
 
 import '../datos/api_cliente.dart';
 
+/// Contrato de autenticación de la App (CU-01). Dos implementaciones:
+/// [ServicioAutenticacion] (Identity Platform, QA y producción) y
+/// `AutenticacionDesarrollo` (solo ambiente dev, sin Firebase).
+abstract class Autenticacion {
+  bool get haySesion;
+  Future<String> token({bool renovar = false});
+  Future<void> solicitarCodigo(String celularE164);
+  Future<void> validarCodigo(String codigo);
+  Future<void> enrolar(ApiCliente api);
+  Future<void> cerrarSesion();
+}
+
 /// CU-01: OTP por SMS (Identity Platform) y enrolamiento del dispositivo.
 /// La sesión se renueva automáticamente (refresh token de Identity Platform).
-class ServicioAutenticacion {
+class ServicioAutenticacion implements Autenticacion {
   ServicioAutenticacion({FirebaseAuth? auth})
       : _auth = auth ?? FirebaseAuth.instance;
 
@@ -17,9 +29,11 @@ class ServicioAutenticacion {
   static const _almacen = FlutterSecureStorage();
   String? _verificationId;
 
+  @override
   bool get haySesion => _auth.currentUser != null;
 
   /// Token vigente para la API. `renovar` fuerza la lectura de claims nuevos tras enrolar.
+  @override
   Future<String> token({bool renovar = false}) async {
     final u = _auth.currentUser;
     if (u == null) throw StateError('Sin sesión');
@@ -27,6 +41,7 @@ class ServicioAutenticacion {
   }
 
   /// Paso 4: el Sistema envía el OTP (válido por 5 minutos) al número en formato E.164.
+  @override
   Future<void> solicitarCodigo(String celularE164) {
     final listo = Completer<void>();
     _auth.verifyPhoneNumber(
@@ -49,6 +64,7 @@ class ServicioAutenticacion {
   }
 
   /// Paso 5: validar el código. Los intentos y bloqueos los aplica Identity Platform (5a).
+  @override
   Future<void> validarCodigo(String codigo) async {
     final id = _verificationId;
     if (id == null) throw StateError('Solicite primero el código.');
@@ -57,6 +73,7 @@ class ServicioAutenticacion {
   }
 
   /// Paso 6: enrolar el dispositivo. El identificador de instalación se genera una sola vez.
+  @override
   Future<void> enrolar(ApiCliente api) async {
     var idinst = await _almacen.read(key: 'gm_idinst');
     if (idinst == null) {
@@ -68,5 +85,6 @@ class ServicioAutenticacion {
     await token(renovar: true);
   }
 
+  @override
   Future<void> cerrarSesion() => _auth.signOut();
 }

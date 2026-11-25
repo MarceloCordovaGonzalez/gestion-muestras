@@ -32,7 +32,7 @@ Formato: `dev:<PERFIL>:<CODEMP>:<rutcon>:<iddis>:<telefono>`
 curl -H "Authorization: Bearer dev:ADMINISTRADOR:EMP1" localhost:8080/v1/dashboard/detalle?fecha=2026-09-30
 
 # Enrolar un conductor (primer ingreso tras OTP)
-curl -X POST -H "Authorization: Bearer dev:CONDUCTOR:EMP1::::+56912345678" \
+curl -X POST -H "Authorization: Bearer dev:CONDUCTOR:EMP1:::+56912345678" \
      -H 'content-type: application/json' -d '{"idinst":"emulador-1"}' localhost:8080/v1/auth/dispositivos
 
 # Marcar (use el rutcon e iddis devueltos por el enrolamiento)

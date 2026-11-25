@@ -1,5 +1,8 @@
 import { Injectable, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+// @prisma/client es CommonJS: en ESM se importa por defecto y se desestructura.
+import prismaPkg, { type Prisma } from '@prisma/client';
+
+const { PrismaClient } = prismaPkg;
 
 export type Tx = Prisma.TransactionClient;
 

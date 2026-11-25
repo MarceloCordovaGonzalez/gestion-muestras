@@ -22,8 +22,8 @@ jobs:
       mobile: ${{ steps.f.outputs.mobile }}
       infra: ${{ steps.f.outputs.infra }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v4
         id: f
         with:
           filters: |
@@ -37,7 +37,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -59,9 +59,9 @@ jobs:
     if: needs.cambios.outputs.domain == 'true' || needs.cambios.outputs.api == 'true' || needs.cambios.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -77,9 +77,9 @@ jobs:
     if: needs.cambios.outputs.domain == 'true' || needs.cambios.outputs.api == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -105,9 +105,9 @@ jobs:
       DATABASE_URL: postgresql://gm:gm_ci@localhost:5432/gestion_muestras
       AUTH_DEV_BYPASS: 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -121,14 +121,66 @@ jobs:
       - name: Contrato OpenAPI
         run: pnpm --filter @gm/contracts lint
 
+  e2e:
+    # Extremo a extremo: API sobre PostGIS real + importación de la planilla demo + jornada del
+    # 30/09/2026; valida los indicadores contra la Especificación Funcional v1.4 (6.4).
+    needs: cambios
+    if: needs.cambios.outputs.api == 'true'
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: gestion_muestras
+          POSTGRES_USER: gm
+          POSTGRES_PASSWORD: gm_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U gm" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://gm:gm_ci@localhost:5432/gestion_muestras
+      PGPASSWORD: gm_ci
+      AUTH_DEV_BYPASS: 'true'
+      NODE_ENV: test
+      PORT: '8080'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @gm/domain build
+      - run: pnpm --filter @gm/api prisma:generate
+      - run: pnpm --filter @gm/api prisma:migrate
+      - name: Comunas de desarrollo
+        run: psql -h localhost -U gm -d gestion_muestras -v ON_ERROR_STOP=1 -q -f db/dev/comunas-desarrollo.sql
+      - run: pnpm --filter @gm/api build
+      - name: Iniciar la API
+        working-directory: apps/api
+        run: |
+          nohup node --enable-source-maps dist/main.js > /tmp/api.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS localhost:8080/v1/salud && exit 0; sleep 2; done
+          cat /tmp/api.log; exit 1
+      - name: Importar planilla de demostración (CU-05)
+        run: pnpm --filter @gm/api demo:importar
+      - name: Simular jornada y verificar el dashboard (CU-02, CU-03, CU-04)
+        run: pnpm --filter @gm/api demo:simular --verificar
+      - name: Idempotencia (segunda ejecución sin duplicar)
+        run: pnpm --filter @gm/api demo:simular --verificar
+      - name: Registro de la API
+        if: always()
+        run: cat /tmp/api.log
+
   web:
     needs: cambios
     if: needs.cambios.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -144,7 +196,7 @@ jobs:
       run:
         working-directory: apps/mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -164,8 +216,8 @@ jobs:
     if: needs.cambios.outputs.infra == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform fmt -check -recursive infra/terraform
       - run: |
           for env in dev qa prod; do
